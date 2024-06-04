@@ -30,8 +30,8 @@ public abstract class GAbstractMojo extends AbstractMojo {
     @Component
     private ResolutionErrorHandler resolutionErrorHandler;
 
-    @Parameter(property = "processingPluginIds", defaultValue = "")
-    protected String processingPluginIds;
+    @Parameter(property = "processingPluginGAIds", defaultValue = "")
+    protected String processingPluginGAIds;
     @Parameter(property = "addDependenciesInfo", defaultValue = "false")
     protected boolean addDependenciesInfo;
     @Parameter(property = "allPluginsInfo", defaultValue = "false")
@@ -66,7 +66,7 @@ public abstract class GAbstractMojo extends AbstractMojo {
             MavenSession session
     ) throws MojoExecutionException {
         if (annotationProcessorPaths == null || annotationProcessorPaths.isEmpty()) {
-            return null;
+            return Collections.emptyList();
         }
 
         try {

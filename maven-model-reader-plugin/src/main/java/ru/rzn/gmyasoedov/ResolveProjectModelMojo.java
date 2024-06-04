@@ -1,25 +1,22 @@
 package ru.rzn.gmyasoedov;
 
 import com.google.gson.Gson;
-import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
-import org.apache.maven.artifact.resolver.ResolutionErrorHandler;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import ru.rzn.gmyasoedov.converter.ListResultConverter;
 import ru.rzn.gmyasoedov.converter.MapResultConverter;
-import ru.rzn.gmyasoedov.model.MavenListResult;
+import ru.rzn.gmyasoedov.plugins.ApacheMavenCompilerPluginProcessor;
+import ru.rzn.gmyasoedov.plugins.PluginProcessorManager;
+import ru.rzn.gmyasoedov.util.MavenContextUtils;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -30,15 +27,13 @@ import java.util.*;
 import static java.lang.String.format;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.NONE;
 import static org.apache.maven.plugins.annotations.ResolutionScope.TEST;
+import static ru.rzn.gmyasoedov.util.MavenContextUtils.ANNOTATION_PROCESSOR_PATHS;
+import static ru.rzn.gmyasoedov.util.MavenContextUtils.EXCLUDED_PATHS;
 
 @Mojo(name = "resolve", defaultPhase = NONE, aggregator = true, requiresDependencyResolution = TEST, threadSafe = true)
 public class ResolveProjectModelMojo extends GAbstractMojo {
-    private static final String GMAVEN_PLUGIN_ANNOTATION_PROCESSOR = "gmaven.plugin.annotation.paths.%s";
 
-    @Parameter(property = "annotationProcessingPluginArtifactIds", defaultValue = "")
-    private String annotationProcessingPluginArtifactIds;
-
-    @Parameter(defaultValue = "${session}", readonly = true)
+    @Parameter(defaultValue = "${session}")
     private MavenSession session;
 
     private boolean skipResolve = false;
@@ -48,11 +43,11 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         BuildContext context = getExecuteContext();
         skipResolve = context.readOnly;
         resolveArtifactErrors = new ArrayList<>();
-        Set<String> gPluginSet = getPluginForBodyProcessing();
-        getLog().info("ResolveProjectMojo: " + gPluginSet);
+        Set<String> gaPluginSet = getGAPluginForBodyProcessing();
+        getLog().info("ResolveProjectMojo: " + gaPluginSet);
         if (session.getAllProjects() == null) return;
         for (MavenProject mavenProject : session.getAllProjects()) {
-            resolvePluginBody(mavenProject, gPluginSet);
+            resolvePluginBody(mavenProject, gaPluginSet);
         }
         for (ArtifactResolutionException error : resolveArtifactErrors) {
             getLog().debug("Resolution of annotationProcessorPath dependencies failed: "
@@ -61,28 +56,28 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
 
         Object result = getResult(context);
         printResult(result);
-        //mvnDebug -f /home/Grigoriy.Myasoedov/jb/single-pom/pom.xml ru.rzn.gmyasoedov:maven-model-reader:1.0-SNAPSHOT:resolve
     }
 
-    public void resolvePluginBody(MavenProject project, Set<String> gPlugins) throws MojoExecutionException {
+    public void resolvePluginBody(MavenProject project, Set<String> gaPlugins) throws MojoExecutionException {
         Model mavenModel = project.getModel();
-        if (gPlugins.isEmpty() || mavenModel == null) return;
+        if (gaPlugins.isEmpty() || mavenModel == null) return;
 
         Build build = mavenModel.getBuild();
         if (build != null) {
             List<Plugin> plugins = build.getPlugins();
             if (plugins != null) {
                 for (Plugin each : plugins) {
-                    processPlugin(each, gPlugins, project);
+                    processPlugin(each, gaPlugins, project);
                 }
             }
         }
     }
 
-    private void processPlugin(Plugin each, Set<String> gPlugins, MavenProject project)
+    private void processPlugin(Plugin each, Set<String> gaPlugins, MavenProject project)
             throws MojoExecutionException {
         String pluginKey = each.getGroupId() + ":" + each.getArtifactId();
-        if (!gPlugins.contains(pluginKey)) return;
+        if (!gaPlugins.contains(pluginKey)) return;
+        PluginProcessorManager.process(project, each);
         Map<String, Object> pluginBody = convertPluginBody(project, each);
         if (!pluginBody.isEmpty()) {
             String key = "gPlugin:" + pluginKey;
@@ -94,6 +89,9 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
             throws MojoExecutionException {
         String annotationProcessorPaths = getPluginAnnotationProcessorPaths(plugin);
         List<String> resolvedPaths = resolveAnnotationProcessor(project, plugin, annotationProcessorPaths);
+        if (!resolvedPaths.isEmpty()) {
+            MavenContextUtils.addListStringValues(project, ANNOTATION_PROCESSOR_PATHS, resolvedPaths);
+        }
         List<Map<String, Object>> executions = new ArrayList<>(plugin.getExecutions().size());
         for (PluginExecution each : plugin.getExecutions()) {
             executions.add(convertExecution(each));
@@ -101,7 +99,6 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         Map<String, Object> result = new HashMap<>(5);
         result.put("executions", executions);
         result.put("configuration", convertConfiguration(plugin.getConfiguration()));
-        result.put("annotationProcessorPath", resolvedPaths);
         return result;
     }
 
@@ -122,9 +119,9 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         }
     }
 
-    private Set<String> getPluginForBodyProcessing() {
-        if (processingPluginIds == null || processingPluginIds.isEmpty()) return Collections.emptySet();
-        String[] gPluginsArray = processingPluginIds.split(";");
+    private Set<String> getGAPluginForBodyProcessing() {
+        if (processingPluginGAIds == null || processingPluginGAIds.isEmpty()) return Collections.emptySet();
+        String[] gPluginsArray = processingPluginGAIds.split(";");
         HashSet<String> gPluginSet = new HashSet<>(gPluginsArray.length * 2);
         Collections.addAll(gPluginSet, gPluginsArray);
         return gPluginSet;
@@ -132,18 +129,23 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
 
     private String getPluginAnnotationProcessorPaths(Plugin plugin) {
         if (skipResolve) return null;
-        String path = System.getProperty(format(GMAVEN_PLUGIN_ANNOTATION_PROCESSOR, plugin.getArtifactId()), "");
-        return path.isEmpty() ? null : path;
+        if (ApacheMavenCompilerPluginProcessor.GROUP_ID.equals(plugin.getGroupId())
+                && ApacheMavenCompilerPluginProcessor.ARTIFACT_ID.equals(plugin.getArtifactId())) {
+            return "annotationProcessorPaths";
+        }
+        return null;
     }
 
     private List<String> resolveAnnotationProcessor(
             MavenProject project, Plugin plugin, String annotationProcessorPaths
     ) throws MojoExecutionException {
-        if (annotationProcessorPaths == null || plugin == null || plugin.getConfiguration() == null) return null;
+        if (annotationProcessorPaths == null || plugin == null || plugin.getConfiguration() == null) {
+            return Collections.emptyList();
+        }
         List<DependencyCoordinate> dependencies = getDependencyCoordinates(plugin, annotationProcessorPaths);
         getLog().debug("Dependencies for resolve " + dependencies);
         List<String> paths = resolveArtifacts(dependencies, project, session);
-        if (paths != null && !paths.isEmpty()) {
+        if (!paths.isEmpty()) {
             getLog().info("annotation processor paths " + paths);
         }
         return paths;

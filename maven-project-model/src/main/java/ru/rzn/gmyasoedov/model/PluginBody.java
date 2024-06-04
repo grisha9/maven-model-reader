@@ -6,7 +6,6 @@ import java.util.List;
 
 public class PluginBody {
     private List<PluginExecution> executions = Collections.emptyList();
-    private List<String> annotationProcessorPaths = Collections.emptyList();
     private List<MavenArtifact> dependencies = Collections.emptyList();
     private String configuration;
 
@@ -16,14 +15,6 @@ public class PluginBody {
 
     public void setExecutions(List<PluginExecution> executions) {
         this.executions = executions;
-    }
-
-    public List<String> getAnnotationProcessorPaths() {
-        return annotationProcessorPaths;
-    }
-
-    public void setAnnotationProcessorPaths(List<String> annotationProcessorPaths) {
-        this.annotationProcessorPaths = annotationProcessorPaths;
     }
 
     public List<MavenArtifact> getDependencies() {
@@ -46,7 +37,6 @@ public class PluginBody {
     public String toString() {
         return "PluginBody{" +
                 "executions=" + executions +
-                ", annotationProcessorPaths=" + annotationProcessorPaths +
                 ", dependencies=" + dependencies +
                 ", configuration='" + configuration + '\'' +
                 '}';

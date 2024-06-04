@@ -30,6 +30,10 @@ public class MavenProject implements MavenId {
     private Map<Object, Object> properties;
     private List<MavenRemoteRepository> remoteRepositories = Collections.emptyList();
 
+    private List<String> annotationProcessorPaths = Collections.emptyList();
+    private List<String> excludedPaths = Collections.emptyList();
+    private String generatedPath;
+    private String testGeneratedPath;
 
     @Override
     public String getArtifactId() {
@@ -208,6 +212,38 @@ public class MavenProject implements MavenId {
 
     public void setRemoteRepositories(List<MavenRemoteRepository> remoteRepositories) {
         this.remoteRepositories = remoteRepositories;
+    }
+
+    public List<String> getExcludedPaths() {
+        return excludedPaths;
+    }
+
+    public void setExcludedPaths(List<String> excludedPaths) {
+        this.excludedPaths = excludedPaths;
+    }
+
+    public String getGeneratedPath() {
+        return generatedPath;
+    }
+
+    public void setGeneratedPath(String generatedPath) {
+        this.generatedPath = generatedPath;
+    }
+
+    public String getTestGeneratedPath() {
+        return testGeneratedPath;
+    }
+
+    public void setTestGeneratedPath(String testGeneratedPath) {
+        this.testGeneratedPath = testGeneratedPath;
+    }
+
+    public List<String> getAnnotationProcessorPaths() {
+        return annotationProcessorPaths;
+    }
+
+    public void setAnnotationProcessorPaths(List<String> annotationProcessorPaths) {
+        this.annotationProcessorPaths = annotationProcessorPaths;
     }
 
     @Override

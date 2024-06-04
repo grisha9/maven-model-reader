@@ -13,10 +13,13 @@ import ru.rzn.gmyasoedov.model.MavenResource;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 
+import static ru.rzn.gmyasoedov.util.MavenContextUtils.*;
+
 public class MavenProjectConverter {
-    private static final  String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
 
     public static MavenProject convert(org.apache.maven.project.MavenProject mavenProject,
                                        BuildContext context) {
@@ -68,6 +71,12 @@ public class MavenProjectConverter {
             List<ArtifactRepository> repositories = mavenProject.getRemoteArtifactRepositories();
             result.setRemoteRepositories(RemoteRepositoryConverter.convert(repositories));
         }
+
+        result.setExcludedPaths(getExcludedPath(mavenProject));
+        result.setGeneratedPath(getGeneratedPath(mavenProject));
+        result.setTestGeneratedPath(getGeneratedTestPath(mavenProject));
+        result.setAnnotationProcessorPaths(getAnnotationProcessorPath(mavenProject));
+
         return result;
     }
 
@@ -79,7 +88,7 @@ public class MavenProjectConverter {
         }
         List<MavenPlugin> plugins = new ArrayList<>(mavenProject.getBuildPlugins().size());
         for (Plugin plugin : mavenProject.getBuildPlugins()) {
-            MavenPlugin convertedPlugin = MavenPluginConverter.convert(plugin, mavenProject, context);
+            MavenPlugin convertedPlugin = MavenPluginConverter.convert(plugin, mavenProject);
             if (convertedPlugin != null) {
                 plugins.add(convertedPlugin);
             }
@@ -114,11 +123,11 @@ public class MavenProjectConverter {
             MavenResource resource = new MavenResource();
             resource.setDirectory(item.getDirectory());
             if (context.fullResourceInfo) {
-              resource.setExcludes(item.getExcludes());
-              resource.setIncludes(item.getIncludes());
-              resource.setFiltering(item.getFiltering());
-              resource.setMergeId(item.getMergeId());
-              resource.setTargetPath(item.getTargetPath());
+                resource.setExcludes(item.getExcludes());
+                resource.setIncludes(item.getIncludes());
+                resource.setFiltering(item.getFiltering());
+                resource.setMergeId(item.getMergeId());
+                resource.setTargetPath(item.getTargetPath());
             }
             result.add(resource);
         }
@@ -151,5 +160,37 @@ public class MavenProjectConverter {
             moduleFile = new File(moduleFile.toURI().normalize());
         }
         return moduleFile;
+    }
+
+    private static List<String> getExcludedPath(org.apache.maven.project.MavenProject project) {
+        Object contextValue = project.getContextValue(EXCLUDED_PATHS);
+        if (contextValue instanceof List) {
+            return (List<String>) contextValue;
+        }
+        return Collections.emptyList();
+    }
+
+    private static List<String> getAnnotationProcessorPath(org.apache.maven.project.MavenProject project) {
+        Object contextValue = project.getContextValue(ANNOTATION_PROCESSOR_PATHS);
+        if (contextValue instanceof List) {
+            return (List<String>) contextValue;
+        }
+        return Collections.emptyList();
+    }
+
+    private static String getGeneratedPath(org.apache.maven.project.MavenProject project) {
+        Object contextValue = project.getContextValue(GENERATED_PATH);
+        if (contextValue instanceof String && !((String) contextValue).isEmpty()) {
+            return (String) contextValue;
+        }
+        return Paths.get(project.getBuild().getDirectory(), "generated-sources", "annotations").toString();
+    }
+
+    private static String getGeneratedTestPath(org.apache.maven.project.MavenProject project) {
+        Object contextValue = project.getContextValue(GENERATED_TEST_PATH);
+        if (contextValue instanceof String && !((String) contextValue).isEmpty()) {
+            return (String) contextValue;
+        }
+        return Paths.get(project.getBuild().getDirectory(), "generated-test-sources", "test-annotations").toString();
     }
 }

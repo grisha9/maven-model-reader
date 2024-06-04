@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MavenPluginConverter {
-    public static MavenPlugin convert(Plugin plugin, MavenProject mavenProject, BuildContext context) {
+    public static MavenPlugin convert(Plugin plugin, MavenProject mavenProject) {
         Object contextValue = mavenProject
                 .getContextValue("gPlugin:" + plugin.getGroupId() + ":" + plugin.getArtifactId());
         if (contextValue == null) return null;
@@ -32,12 +32,8 @@ public class MavenPluginConverter {
             try {
                 Map<String, Object> map = (Map<String, Object>) contextValue;
                 List<Map<String, Object>> executions = (List<Map<String, Object>>) map.get("executions");
-                Object processorPath = map.get("annotationProcessorPath");
-                List<String> annotationProcessorPaths = processorPath instanceof List
-                        ? (List<String>) processorPath : Collections.<String>emptyList();
                 PluginBody pluginBody = new PluginBody();
                 pluginBody.setExecutions(mapToExecutions(executions));
-                pluginBody.setAnnotationProcessorPaths(annotationProcessorPaths);
                 pluginBody.setDependencies(toArtifactList(dependencies));
                 pluginBody.setConfiguration(getConfiguration(map));
                 return pluginBody;
