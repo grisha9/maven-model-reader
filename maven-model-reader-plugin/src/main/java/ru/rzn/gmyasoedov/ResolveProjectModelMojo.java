@@ -123,7 +123,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
     }
 
     private Set<String> getPluginForBodyProcessing() {
-        if (processingPluginIds.isEmpty()) return Collections.emptySet();
+        if (processingPluginIds == null || processingPluginIds.isEmpty()) return Collections.emptySet();
         String[] gPluginsArray = processingPluginIds.split(";");
         HashSet<String> gPluginSet = new HashSet<>(gPluginsArray.length * 2);
         Collections.addAll(gPluginSet, gPluginsArray);
@@ -194,7 +194,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
             new Gson().toJson(result, new FileWriter(resultPath.toFile()));
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } 
+        }
     }
 
     private Object getResult(BuildContext context) {

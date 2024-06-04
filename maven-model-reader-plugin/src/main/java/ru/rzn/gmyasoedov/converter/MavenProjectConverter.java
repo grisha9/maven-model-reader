@@ -16,14 +16,11 @@ import java.io.IOException;
 import java.util.*;
 
 public class MavenProjectConverter {
+    private static final  String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
 
     public static MavenProject convert(org.apache.maven.project.MavenProject mavenProject,
                                        BuildContext context) {
-
-        List<MavenPlugin> plugins = new ArrayList<>(mavenProject.getBuildPlugins().size());
-        for (Plugin plugin : mavenProject.getBuildPlugins()) {
-            plugins.add(MavenPluginConverter.convert(plugin, mavenProject, context));
-        }
+        List<MavenPlugin> plugins = getPlugins(mavenProject, context);
 
         List<MavenArtifact> artifacts = new ArrayList<>(mavenProject.getArtifacts().size());
         for (Artifact artifact : mavenProject.getArtifacts()) {
@@ -48,7 +45,9 @@ public class MavenProjectConverter {
         result.setName(mavenProject.getName());
         result.setBasedir(mavenProject.getBasedir().getAbsolutePath());
         result.setFilePath(mavenProject.getFile().getAbsolutePath());
-        result.setParentFilePath(mavenProject.getParentFile().getAbsolutePath());
+        result.setParentFilePath(
+                mavenProject.getParentFile() != null ? mavenProject.getParentFile().getAbsolutePath() : null
+        );
         result.setModulesDir(modulesDir);
         result.setPlugins(plugins);
         result.setSourceRoots(mavenProject.getCompileSourceRoots());
@@ -70,6 +69,22 @@ public class MavenProjectConverter {
             result.setRemoteRepositories(RemoteRepositoryConverter.convert(repositories));
         }
         return result;
+    }
+
+    private static List<MavenPlugin> getPlugins(
+            org.apache.maven.project.MavenProject mavenProject, BuildContext context
+    ) {
+        if (!context.allPluginsInfo) {
+            return Collections.emptyList();
+        }
+        List<MavenPlugin> plugins = new ArrayList<>(mavenProject.getBuildPlugins().size());
+        for (Plugin plugin : mavenProject.getBuildPlugins()) {
+            MavenPlugin convertedPlugin = MavenPluginConverter.convert(plugin, mavenProject, context);
+            if (convertedPlugin != null) {
+                plugins.add(convertedPlugin);
+            }
+        }
+        return plugins;
     }
 
     private static Map<Object, Object> getProperties(org.apache.maven.project.MavenProject mavenProject) {
@@ -126,7 +141,7 @@ public class MavenProjectConverter {
             moduleFile = moduleFile.getParentFile();
         }
         // we don't canonicalize on unix to avoid interfering with symlinks
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        if (OS_NAME.contains("windows")) {
             try {
                 moduleFile = moduleFile.getCanonicalFile();
             } catch (IOException e) {

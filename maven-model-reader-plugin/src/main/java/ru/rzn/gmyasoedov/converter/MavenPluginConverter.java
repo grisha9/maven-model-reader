@@ -18,7 +18,7 @@ public class MavenPluginConverter {
     public static MavenPlugin convert(Plugin plugin, MavenProject mavenProject, BuildContext context) {
         Object contextValue = mavenProject
                 .getContextValue("gPlugin:" + plugin.getGroupId() + ":" + plugin.getArtifactId());
-        if (!context.allPluginsInfo && contextValue == null) return null;
+        if (contextValue == null) return null;
         MavenPlugin mavenPlugin = new MavenPlugin();
         mavenPlugin.setGroupId(plugin.getGroupId());
         mavenPlugin.setArtifactId(plugin.getArtifactId());
