@@ -61,17 +61,15 @@ public abstract class GAbstractMojo extends AbstractMojo {
     }
 
     protected List<String> resolveArtifacts(
-            List<DependencyCoordinate> annotationProcessorPaths,
-            MavenProject project,
-            MavenSession session
+            List<DependencyCoordinate> dependencyCoordinates, MavenProject project, MavenSession session
     ) throws MojoExecutionException {
-        if (annotationProcessorPaths == null || annotationProcessorPaths.isEmpty()) {
+        if (dependencyCoordinates == null || dependencyCoordinates.isEmpty()) {
             return Collections.emptyList();
         }
 
         try {
             Set<String> elements = new LinkedHashSet<>();
-            for (DependencyCoordinate coord : annotationProcessorPaths) {
+            for (DependencyCoordinate coord : dependencyCoordinates) {
                 ArtifactHandler handler = artifactHandlerManager.getArtifactHandler(coord.getType());
 
                 Artifact artifact = new DefaultArtifact(
@@ -108,8 +106,7 @@ public abstract class GAbstractMojo extends AbstractMojo {
             resolveArtifactErrors.add(e);
             return Collections.emptyList();
         } catch (Exception e) {
-            throw new MojoExecutionException("Resolution of annotationProcessorPath dependencies failed: "
-                    + e.getLocalizedMessage(), e);
+            throw new MojoExecutionException("Resolution dependencies failed: " + e.getLocalizedMessage(), e);
         }
     }
 

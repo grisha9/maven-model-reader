@@ -19,6 +19,7 @@ import static ru.rzn.gmyasoedov.maven.plugin.reader.util.MavenContextUtils.*;
 
 public class MavenProjectConverter {
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
+    private static final int MAX_PROJECT_RECURSION_DEPTH = 10;
 
     public static MavenProject convert(org.apache.maven.project.MavenProject mavenProject,
                                        BuildContext context) {
@@ -30,13 +31,7 @@ public class MavenProjectConverter {
         }
         List<String> modulesDir = convertModules(mavenProject.getBasedir(), mavenProject.getModules());
         if (context.readOnly) {
-            Map<String, org.apache.maven.project.MavenProject> references = mavenProject.getProjectReferences();
-            if (references != null) {
-                for (org.apache.maven.project.MavenProject each : references.values()) {
-                    MavenArtifact mavenArtifact = MavenArtifactConverter.convert(each);
-                    artifacts.add(mavenArtifact);
-                }
-            }
+            addReferencedProjects(mavenProject, artifacts, 0);
         }
 
         MavenProject result = new MavenProject();
@@ -191,5 +186,19 @@ public class MavenProjectConverter {
             return (String) contextValue;
         }
         return Paths.get(project.getBuild().getDirectory(), "generated-test-sources", "test-annotations").toString();
+    }
+
+    private static void addReferencedProjects(
+            org.apache.maven.project.MavenProject mavenProject, List<MavenArtifact> artifacts, int depth
+    ) {
+        if (depth > MAX_PROJECT_RECURSION_DEPTH) return;
+        Map<String, org.apache.maven.project.MavenProject> references = mavenProject.getProjectReferences();
+        if (references != null) {
+            for (org.apache.maven.project.MavenProject each : references.values()) {
+                MavenArtifact mavenArtifact = MavenArtifactConverter.convert(each);
+                artifacts.add(mavenArtifact);
+                addReferencedProjects(each, artifacts, depth + 1);
+            }
+        }
     }
 }

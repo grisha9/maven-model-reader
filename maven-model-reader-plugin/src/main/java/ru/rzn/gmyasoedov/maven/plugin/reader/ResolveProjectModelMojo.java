@@ -3,10 +3,7 @@ package ru.rzn.gmyasoedov.maven.plugin.reader;
 import com.google.gson.Gson;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Build;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.PluginExecution;
+import org.apache.maven.model.*;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -21,10 +18,11 @@ import ru.rzn.gmyasoedov.maven.plugin.reader.util.MavenContextUtils;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
-import static java.lang.String.format;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.NONE;
 import static org.apache.maven.plugins.annotations.ResolutionScope.TEST;
 import static ru.rzn.gmyasoedov.maven.plugin.reader.util.MavenContextUtils.ANNOTATION_PROCESSOR_PATHS;
@@ -34,19 +32,22 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
 
     @Parameter(defaultValue = "${session}")
     private MavenSession session;
+    @Parameter(property = "resolvedPluginArtifactIds", defaultValue = "")
+    protected Set<String> resolvedPluginArtifactIds;
 
-    private boolean skipResolve = false;
 
     @Override
     public void execute() throws MojoExecutionException {
         BuildContext context = getExecuteContext();
-        skipResolve = context.readOnly;
+        if (!context.readOnly && !getResolvedPluginArtifactIds().isEmpty()) {
+            getLog().info("resolvedArtifactIds " + resolvedPluginArtifactIds);
+        }
         resolveArtifactErrors = new ArrayList<>();
         Set<String> gaPluginSet = getGAPluginForBodyProcessing();
         getLog().info("ResolveProjectMojo: " + gaPluginSet);
         if (session.getAllProjects() == null) return;
         for (MavenProject mavenProject : session.getAllProjects()) {
-            resolvePluginBody(mavenProject, gaPluginSet);
+            resolvePluginBody(mavenProject, gaPluginSet, context);
         }
         for (ArtifactResolutionException error : resolveArtifactErrors) {
             getLog().debug("Resolution of annotationProcessorPath dependencies failed: "
@@ -57,37 +58,54 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         printResult(result);
     }
 
-    public void resolvePluginBody(MavenProject project, Set<String> gaPlugins) throws MojoExecutionException {
+    public void resolvePluginBody(
+            MavenProject project, Set<String> gaPlugins, BuildContext context
+    ) throws MojoExecutionException {
         Model mavenModel = project.getModel();
         if (gaPlugins.isEmpty() || mavenModel == null) return;
 
         Build build = mavenModel.getBuild();
         if (build != null) {
             List<Plugin> plugins = build.getPlugins();
-            if (plugins != null) {
-                for (Plugin each : plugins) {
-                    processPlugin(each, gaPlugins, project);
-                }
+            if (plugins == null) return;
+            for (Plugin each : plugins) {
+                processPlugin(each, gaPlugins, project, context);
             }
         }
     }
 
-    private void processPlugin(Plugin each, Set<String> gaPlugins, MavenProject project)
+    private void processPlugin(Plugin each, Set<String> gaPlugins, MavenProject project, BuildContext context)
             throws MojoExecutionException {
         String pluginKey = each.getGroupId() + ":" + each.getArtifactId();
         if (!gaPlugins.contains(pluginKey)) return;
         PluginProcessorManager.process(project, each);
-        Map<String, Object> pluginBody = convertPluginBody(project, each);
+        Map<String, Object> pluginBody = convertPluginBody(project, each, context);
         if (!pluginBody.isEmpty()) {
             String key = "gPlugin:" + pluginKey;
             project.setContextValue(key, pluginBody);
         }
+
+        resolvePluginDependencies(each, project, context);
     }
 
-    private Map<String, Object> convertPluginBody(MavenProject project, Plugin plugin)
+    private void resolvePluginDependencies(
+            Plugin each, MavenProject project, BuildContext context
+    ) throws MojoExecutionException {
+        if (context.readOnly) return;
+
+        if (getResolvedPluginArtifactIds().contains(each.getArtifactId())) {
+            resolve(each.getArtifactId(), each.getGroupId(), each.getVersion(), project);
+            List<Dependency> dependencies = each.getDependencies();
+            if (dependencies == null) return;
+            for (Dependency dependency : dependencies) {
+                resolve(dependency.getArtifactId(), dependency.getGroupId(), dependency.getVersion(), project);
+            }
+        }
+    }
+
+    private Map<String, Object> convertPluginBody(MavenProject project, Plugin plugin, BuildContext context)
             throws MojoExecutionException {
-        String annotationProcessorPaths = getPluginAnnotationProcessorPaths(plugin);
-        List<String> resolvedPaths = resolveAnnotationProcessor(project, plugin, annotationProcessorPaths);
+        List<String> resolvedPaths = resolveMavenCompilerAnnotationProcessor(project, plugin, context);
         if (!resolvedPaths.isEmpty()) {
             MavenContextUtils.addListStringValues(project, ANNOTATION_PROCESSOR_PATHS, resolvedPaths);
         }
@@ -126,22 +144,16 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         return gPluginSet;
     }
 
-    private String getPluginAnnotationProcessorPaths(Plugin plugin) {
-        if (skipResolve) return null;
-        if (ApacheMavenCompilerPluginProcessor.GROUP_ID.equals(plugin.getGroupId())
-                && ApacheMavenCompilerPluginProcessor.ARTIFACT_ID.equals(plugin.getArtifactId())) {
-            return "annotationProcessorPaths";
-        }
-        return null;
-    }
-
-    private List<String> resolveAnnotationProcessor(
-            MavenProject project, Plugin plugin, String annotationProcessorPaths
-    ) throws MojoExecutionException {
-        if (annotationProcessorPaths == null || plugin == null || plugin.getConfiguration() == null) {
+    private List<String> resolveMavenCompilerAnnotationProcessor(
+            MavenProject project, Plugin plugin,
+            BuildContext context) throws MojoExecutionException {
+        if (context.readOnly || plugin == null || plugin.getConfiguration() == null
+                || !ApacheMavenCompilerPluginProcessor.GROUP_ID.equals(plugin.getGroupId())
+                || !ApacheMavenCompilerPluginProcessor.ARTIFACT_ID.equals(plugin.getArtifactId())) {
             return Collections.emptyList();
         }
-        List<DependencyCoordinate> dependencies = getDependencyCoordinates(plugin, annotationProcessorPaths);
+
+        List<DependencyCoordinate> dependencies = getDependencyCoordinatesForAnnotationProccessor(plugin);
         getLog().debug("Dependencies for resolve " + dependencies);
         List<String> paths = resolveArtifacts(dependencies, project, session);
         if (!paths.isEmpty()) {
@@ -150,12 +162,12 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         return paths;
     }
 
-    private List<DependencyCoordinate> getDependencyCoordinates(Plugin plugin, String annotationProcessorPaths)
+    private List<DependencyCoordinate> getDependencyCoordinatesForAnnotationProccessor(Plugin plugin)
             throws MojoExecutionException {
         List<DependencyCoordinate> dependencies = new ArrayList<>();
         Xpp3Dom configuration = (Xpp3Dom) plugin.getConfiguration();
         for (Xpp3Dom dom : configuration.getChildren()) {
-            if (annotationProcessorPaths.equalsIgnoreCase(dom.getName())) {
+            if ("annotationProcessorPaths".equalsIgnoreCase(dom.getName())) {
                 getLog().debug("annotationProcessorPaths=" + dom);
                 for (Xpp3Dom child : dom.getChildren()) {
                     DependencyCoordinate coordinate = getDependencyCoordinate(child);
@@ -188,19 +200,51 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
     }
 
     private void printResult(Object result) {
-        Path buildFilePath = session.getCurrentProject().getFile().toPath();
-        Path parentPath = buildFilePath.getParent();
-        Path resultPath = parentPath.resolve(".gmaven." + buildFilePath.getFileName());
+        MavenProject mavenProject = session.getTopLevelProject();
+        if (mavenProject == null) {
+            throw new RuntimeException("Maven top level project not found");
+        }
+        Path buildDirectory = getBuildDirectory(mavenProject);
+        Path resultPath = buildDirectory.resolve(".gmaven.pom.json");
         try {
+            if (!buildDirectory.toFile().exists()) {
+                Files.createDirectory(buildDirectory);
+            }
             new Gson().toJson(result, new FileWriter(resultPath.toFile()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private static Path getBuildDirectory(MavenProject mavenProject) {
+        String buildDirectory = mavenProject.getBuild().getDirectory();
+        if (buildDirectory == null) {
+            return mavenProject.getBasedir().toPath();
+        }
+        Path path = Paths.get(buildDirectory);
+        if (path.getFileName().toString().endsWith("target")) {
+            return path;
+        }
+        return mavenProject.getBasedir().toPath();
+    }
+
     private Object getResult(BuildContext context) {
         return context.resultAsTree
                 ? MapResultConverter.convert(session, context) : ListResultConverter.convert(session, context);
+    }
+
+    protected Set<String> getResolvedPluginArtifactIds() {
+        return resolvedPluginArtifactIds != null ? resolvedPluginArtifactIds : Collections.<String>emptySet();
+    }
+
+    private void resolve(String artifactId, String groupId, String version, MavenProject project)
+            throws MojoExecutionException {
+        DependencyCoordinate coordinateDep = new DependencyCoordinate();
+        coordinateDep.setArtifactId(artifactId);
+        coordinateDep.setGroupId(groupId);
+        coordinateDep.setVersion(version);
+        getLog().info("gmaven.resolvedArtifactId " + coordinateDep);
+        resolveArtifacts(Collections.singletonList(coordinateDep), project, session);
     }
 
 }
