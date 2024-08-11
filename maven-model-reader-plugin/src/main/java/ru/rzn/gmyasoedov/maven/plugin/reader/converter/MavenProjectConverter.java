@@ -19,7 +19,7 @@ import static ru.rzn.gmyasoedov.maven.plugin.reader.util.MavenContextUtils.*;
 
 public class MavenProjectConverter {
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
-    private static final int MAX_PROJECT_RECURSION_DEPTH = 10;
+    private static final int MAX_PROJECT_RECURSION_DEPTH = 3;
 
     public static MavenProject convert(org.apache.maven.project.MavenProject mavenProject,
                                        BuildContext context) {
@@ -197,7 +197,9 @@ public class MavenProjectConverter {
             for (org.apache.maven.project.MavenProject each : references.values()) {
                 MavenArtifact mavenArtifact = MavenArtifactConverter.convert(each);
                 artifacts.add(mavenArtifact);
-                addReferencedProjects(each, artifacts, depth + 1);
+                // todo potential memory leak
+                // solution: not create duplicate MavenArtifactConverter and save to map projectId(artifactId) -> subprojects
+                //addReferencedProjects(each, artifacts, depth + 1);
             }
         }
     }

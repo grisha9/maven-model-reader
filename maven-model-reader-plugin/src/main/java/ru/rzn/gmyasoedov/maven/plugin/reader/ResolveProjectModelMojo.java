@@ -17,6 +17,7 @@ import ru.rzn.gmyasoedov.maven.plugin.reader.util.MavenContextUtils;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,7 +28,13 @@ import static org.apache.maven.plugins.annotations.LifecyclePhase.NONE;
 import static org.apache.maven.plugins.annotations.ResolutionScope.TEST;
 import static ru.rzn.gmyasoedov.maven.plugin.reader.util.MavenContextUtils.ANNOTATION_PROCESSOR_PATHS;
 
-@Mojo(name = "resolve", defaultPhase = NONE, aggregator = true, requiresDependencyResolution = TEST, threadSafe = true)
+@Mojo(
+        name = "resolve",
+        defaultPhase = NONE,
+        aggregator = true,
+        requiresDependencyResolution = TEST,
+        threadSafe = true
+)
 public class ResolveProjectModelMojo extends GAbstractMojo {
 
     @Parameter(defaultValue = "${session}")
@@ -210,7 +217,10 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
             if (!buildDirectory.toFile().exists()) {
                 Files.createDirectory(buildDirectory);
             }
-            new Gson().toJson(result, new FileWriter(resultPath.toFile()));
+
+            try (Writer writer = new FileWriter(resultPath.toFile())) {
+                new Gson().toJson(result, writer);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
