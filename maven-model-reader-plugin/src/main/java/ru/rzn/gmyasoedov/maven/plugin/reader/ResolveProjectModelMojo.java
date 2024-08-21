@@ -39,15 +39,15 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
 
     @Parameter(defaultValue = "${session}")
     private MavenSession session;
-    @Parameter(property = "resolvedPluginArtifactIds", defaultValue = "")
-    protected Set<String> resolvedPluginArtifactIds;
+    @Parameter(property = "resolvedPluginGAIds", defaultValue = "")
+    protected Set<String> resolvedPluginGAIds;
 
 
     @Override
     public void execute() throws MojoExecutionException {
         BuildContext context = getExecuteContext();
-        if (!context.readOnly && !getResolvedPluginArtifactIds().isEmpty()) {
-            getLog().info("resolvedArtifactIds " + resolvedPluginArtifactIds);
+        if (!context.readOnly && !getResolvedPluginGAIds().isEmpty()) {
+            getLog().info("resolvedArtifactIds " + resolvedPluginGAIds);
         }
         resolveArtifactErrors = new ArrayList<>();
         Set<String> gaPluginSet = getGAPluginForBodyProcessing();
@@ -100,7 +100,8 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
     ) throws MojoExecutionException {
         if (context.readOnly) return;
 
-        if (getResolvedPluginArtifactIds().contains(each.getArtifactId())) {
+        String pluginKey = each.getGroupId() + ":" + each.getArtifactId();
+        if (getResolvedPluginGAIds().contains(pluginKey)) {
             resolve(each.getArtifactId(), each.getGroupId(), each.getVersion(), project);
             List<Dependency> dependencies = each.getDependencies();
             if (dependencies == null) return;
@@ -144,11 +145,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
     }
 
     private Set<String> getGAPluginForBodyProcessing() {
-        if (processingPluginGAIds == null || processingPluginGAIds.isEmpty()) return Collections.emptySet();
-        String[] gPluginsArray = processingPluginGAIds.split(";");
-        HashSet<String> gPluginSet = new HashSet<>(gPluginsArray.length * 2);
-        Collections.addAll(gPluginSet, gPluginsArray);
-        return gPluginSet;
+        return processingPluginGAIds == null ? Collections.<String>emptySet() : processingPluginGAIds;
     }
 
     private List<String> resolveMavenCompilerAnnotationProcessor(
@@ -243,8 +240,8 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
                 ? MapResultConverter.convert(session, context) : ListResultConverter.convert(session, context);
     }
 
-    protected Set<String> getResolvedPluginArtifactIds() {
-        return resolvedPluginArtifactIds != null ? resolvedPluginArtifactIds : Collections.<String>emptySet();
+    protected Set<String> getResolvedPluginGAIds() {
+        return resolvedPluginGAIds != null ? resolvedPluginGAIds : Collections.<String>emptySet();
     }
 
     private void resolve(String artifactId, String groupId, String version, MavenProject project)

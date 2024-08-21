@@ -31,10 +31,10 @@ public abstract class GAbstractMojo extends AbstractMojo {
     private ResolutionErrorHandler resolutionErrorHandler;
 
     @Parameter(property = "processingPluginGAIds", defaultValue = "")
-    protected String processingPluginGAIds;
+    protected Set<String> processingPluginGAIds;
     @Parameter(property = "addDependenciesInfo", defaultValue = "false")
     protected boolean addDependenciesInfo;
-    @Parameter(property = "allPluginsInfo", defaultValue = "false")
+    @Parameter(property = "allPluginsInfo", defaultValue = "true")
     protected boolean allPluginsInfo;
     @Parameter(property = "addRemoteRepositoryInfo", defaultValue = "false")
     protected boolean addRemoteRepositoryInfo;
