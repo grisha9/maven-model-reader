@@ -7,9 +7,7 @@ import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProfile;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenSettings;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class MavenSettingsConverter {
 
@@ -20,7 +18,7 @@ public class MavenSettingsConverter {
         String localRepository = session.getRequest().getLocalRepository().getBasedir();
         File settingsFile = session.getRequest().getUserSettingsFile();
         String settingsFilePath = settingsFile == null ? null : settingsFile.getAbsolutePath();
-        Collection<String> activeProfiles = session.getRequest().getActiveProfiles();//todo
+        Collection<String> activeProfiles = getActiveSettingsProfiles(session);
 
         MavenSettings settings = new MavenSettings();
         settings.setModulesCount(session.getAllProjects() == null ? 0 : session.getAllProjects().size());
@@ -53,4 +51,19 @@ public class MavenSettingsConverter {
         mavenProfile.setActivation(profile.getActivation() != null || activeProfiles.contains(profile.getId()));
         return mavenProfile;
     }
+
+    private static List<String> getActiveSettingsProfiles(MavenSession session) {
+        List<String> activeProfiles = session.getRequest().getActiveProfiles();
+        if (activeProfiles == null || activeProfiles.isEmpty()) return Collections.emptyList();
+        List<Profile> profiles = session.getRequest().getProfiles();
+        profiles = profiles == null ? Collections.<Profile>emptyList() : profiles;
+        ArrayList<String> activeSettingsProfile = new ArrayList<>(3);
+        for (Profile profile : profiles) {
+            if ("settings.xml".equalsIgnoreCase(profile.getSource()) && activeProfiles.contains(profile.getId())) {
+                activeSettingsProfile.add(profile.getId());
+            }
+        }
+        return activeSettingsProfile;
+    }
+
 }
