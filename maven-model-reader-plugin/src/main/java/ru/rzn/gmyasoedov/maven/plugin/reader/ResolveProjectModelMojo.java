@@ -1,6 +1,5 @@
 package ru.rzn.gmyasoedov.maven.plugin.reader;
 
-import com.google.gson.Gson;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.*;
@@ -15,13 +14,7 @@ import ru.rzn.gmyasoedov.maven.plugin.reader.plugins.ApacheMavenCompilerPluginPr
 import ru.rzn.gmyasoedov.maven.plugin.reader.plugins.PluginProcessorManager;
 import ru.rzn.gmyasoedov.maven.plugin.reader.util.MavenContextUtils;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static org.apache.maven.plugins.annotations.LifecyclePhase.NONE;
@@ -62,7 +55,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         }
 
         Object result = getResult(context);
-        printResult(result);
+        printResultPOM(result, session);
     }
 
     public void resolvePluginBody(
@@ -201,38 +194,6 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         }
         return coordinate.getArtifactId() == null || coordinate.getGroupId() == null || coordinate.getVersion() == null
                 ? null : coordinate;
-    }
-
-    private void printResult(Object result) {
-        MavenProject mavenProject = session.getTopLevelProject();
-        if (mavenProject == null) {
-            throw new RuntimeException("Maven top level project not found");
-        }
-        Path buildDirectory = getBuildDirectory(mavenProject);
-        Path resultPath = buildDirectory.resolve(".gmaven.pom.json");
-        try {
-            if (!buildDirectory.toFile().exists()) {
-                Files.createDirectory(buildDirectory);
-            }
-
-            try (Writer writer = new FileWriter(resultPath.toFile())) {
-                new Gson().toJson(result, writer);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static Path getBuildDirectory(MavenProject mavenProject) {
-        String buildDirectory = mavenProject.getBuild().getDirectory();
-        if (buildDirectory == null) {
-            return mavenProject.getBasedir().toPath();
-        }
-        Path path = Paths.get(buildDirectory);
-        if (path.getFileName().toString().endsWith("target")) {
-            return path;
-        }
-        return mavenProject.getBasedir().toPath();
     }
 
     private Object getResult(BuildContext context) {

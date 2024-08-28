@@ -3,14 +3,16 @@ package ru.rzn.gmyasoedov.maven.plugin.reader.converter;
 import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.StringUtils;
 import ru.rzn.gmyasoedov.maven.plugin.reader.BuildContext;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.BuildErrors;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenMapResult;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProjectContainer;
 
 import java.io.File;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 public class MapResultConverter {
@@ -56,7 +58,7 @@ public class MapResultConverter {
                                       BuildContext context) {
         ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProject project = rootContainer.getProject();
         for (String module : project.getModulesDir()) {
-            if (StringUtils.isEmpty(module)) continue;
+            if (module == null || module.isEmpty()) continue;
 
             File moduleFile = new File(module);
             MavenProject mavenProjectByModuleFile = projectByDirectoryMap.get(moduleFile);

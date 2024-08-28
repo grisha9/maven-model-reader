@@ -1,6 +1,7 @@
 package ru.rzn.gmyasoedov.maven.plugin.reader;
 
 
+import com.google.gson.Gson;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.handler.ArtifactHandler;
@@ -19,10 +20,18 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public abstract class GAbstractMojo extends AbstractMojo {
+    public static final String GMAVEN_POM_JSON = ".gmaven.pom.json";
+    public static final String GMAVEN_TREE_JSON = ".gmaven.tree.json";
     @Component
     private RepositorySystem repositorySystem;
     @Component
@@ -108,6 +117,42 @@ public abstract class GAbstractMojo extends AbstractMojo {
         } catch (Exception e) {
             throw new MojoExecutionException("Resolution dependencies failed: " + e.getLocalizedMessage(), e);
         }
+    }
+
+    protected void printResultPOM(Object result, MavenSession session) {
+        printResult(result, session, GMAVEN_POM_JSON);
+    }
+
+    protected void printResult(Object result, MavenSession session, String fileName) {
+        MavenProject mavenProject = session.getTopLevelProject();
+        if (mavenProject == null) {
+            throw new RuntimeException("Maven top level project not found");
+        }
+        Path buildDirectory = getBuildDirectory(mavenProject);
+        Path resultPath = buildDirectory.resolve(fileName);
+        try {
+            if (!buildDirectory.toFile().exists()) {
+                Files.createDirectory(buildDirectory);
+            }
+
+            try (Writer writer = new FileWriter(resultPath.toFile())) {
+                new Gson().toJson(result, writer);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Path getBuildDirectory(MavenProject mavenProject) {
+        String buildDirectory = mavenProject.getBuild().getDirectory();
+        if (buildDirectory == null) {
+            return mavenProject.getBasedir().toPath();
+        }
+        Path path = Paths.get(buildDirectory);
+        if (path.getFileName().toString().endsWith("target")) {
+            return path;
+        }
+        return mavenProject.getBasedir().toPath();
     }
 
     private static File tryGetLocalArtifactFromTarget(MavenProject project) {

@@ -45,6 +45,7 @@
     <modules>
         <module>maven-project-model</module>
         <module>maven-model-reader-plugin</module>
+        <module>maven-dependency-graph-extension</module>
     </modules>
     <packaging>pom</packaging>
 

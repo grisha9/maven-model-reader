@@ -1,6 +1,5 @@
 package ru.rzn.gmyasoedov.maven.plugin.reader.model;
 
-import java.io.File;
 import java.util.Objects;
 
 public class MavenArtifactNode {
@@ -12,7 +11,7 @@ public class MavenArtifactNode {
     private String classifier;
     private String scope;
     private boolean optional;
-    private File file;
+    private String filePath;
     private boolean resolved;
 
     public String getGroupId() {
@@ -71,12 +70,12 @@ public class MavenArtifactNode {
         this.optional = optional;
     }
 
-    public File getFile() {
-        return file;
+    public String getFilePath() {
+        return filePath;
     }
 
-    public void setFile(File file) {
-        this.file = file;
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
     public boolean isResolved() {
@@ -99,11 +98,11 @@ public class MavenArtifactNode {
                 && Objects.equals(type, that.type)
                 && Objects.equals(classifier, that.classifier)
                 && Objects.equals(scope, that.scope)
-                && Objects.equals(file, that.file);
+                && Objects.equals(filePath, that.filePath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(groupId, artifactId, version, type, classifier, scope, optional, file, resolved);
+        return Objects.hash(groupId, artifactId, version, type, classifier, scope, optional, filePath, resolved);
     }
 }
