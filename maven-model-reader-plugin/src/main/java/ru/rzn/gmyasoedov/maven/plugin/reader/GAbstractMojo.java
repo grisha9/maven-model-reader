@@ -2,6 +2,7 @@ package ru.rzn.gmyasoedov.maven.plugin.reader;
 
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.handler.ArtifactHandler;
@@ -51,6 +52,8 @@ public abstract class GAbstractMojo extends AbstractMojo {
     protected boolean fullResourceInfo;
     @Parameter(property = "resultAsTree", defaultValue = "false")
     protected boolean resultAsTree;
+    @Parameter(property = "jsonPrettyPrinting", defaultValue = "false")
+    protected boolean jsonPrettyPrinting;
 
     protected final Map<String, Field> dependencyCoordinateFieldMap = getDependencyCoordinateFieldMap();
     protected List<ArtifactResolutionException> resolveArtifactErrors = new ArrayList<>();
@@ -136,11 +139,19 @@ public abstract class GAbstractMojo extends AbstractMojo {
             }
 
             try (Writer writer = new FileWriter(resultPath.toFile())) {
-                new Gson().toJson(result, writer);
+                Gson gson = getGson();
+                gson.toJson(result, writer);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Gson getGson() {
+        if (jsonPrettyPrinting) {
+            return new GsonBuilder().setPrettyPrinting().create();
+        }
+        return new Gson();
     }
 
     private static Path getBuildDirectory(MavenProject mavenProject) {
