@@ -10,6 +10,8 @@ import org.eclipse.aether.graph.DependencyNode;
 import javax.inject.Named;
 import java.util.List;
 
+import static ru.rzn.gmyasoedov.dependency.graph.DependencySpyConstants.GMAVEN_DEPENDENCY_GRAPH;
+
 @Named
 public class DependencyResolutionResultEventSpy extends AbstractEventSpy {
 
@@ -35,7 +37,7 @@ public class DependencyResolutionResultEventSpy extends AbstractEventSpy {
         if (projects == null) return;
         for (MavenProject project : projects) {
             if (key.equals(project.getArtifactId())) {
-                project.setContextValue("gmaven-dependency-graph", dependencyGraph);
+                project.setContextValue(GMAVEN_DEPENDENCY_GRAPH, dependencyGraph);
                 return;
             }
         }
