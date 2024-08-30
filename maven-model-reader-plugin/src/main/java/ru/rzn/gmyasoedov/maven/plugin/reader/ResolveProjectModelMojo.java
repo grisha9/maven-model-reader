@@ -20,6 +20,7 @@ import java.util.*;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.NONE;
 import static org.apache.maven.plugins.annotations.ResolutionScope.TEST;
 import static ru.rzn.gmyasoedov.maven.plugin.reader.util.MavenContextUtils.ANNOTATION_PROCESSOR_PATHS;
+import static ru.rzn.gmyasoedov.maven.plugin.reader.util.PluginUtils.PLUGIN_CONTEXT_PREFIX;
 
 @Mojo(
         name = "resolve",
@@ -81,7 +82,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         PluginProcessorManager.process(project, each);
         Map<String, Object> pluginBody = convertPluginBody(project, each, context);
         if (!pluginBody.isEmpty()) {
-            String key = "gPlugin:" + pluginKey;
+            String key = PLUGIN_CONTEXT_PREFIX + pluginKey;
             project.setContextValue(key, pluginBody);
         }
 

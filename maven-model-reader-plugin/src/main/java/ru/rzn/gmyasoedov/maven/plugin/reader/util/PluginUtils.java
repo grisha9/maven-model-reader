@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 public abstract class PluginUtils {
+    public static final String PLUGIN_CONTEXT_PREFIX = "gPlugin:";
 
     public static List<String> getPathList(Object config, String parameterName) {
         Xpp3Dom sourceDirs = config instanceof Xpp3Dom ? ((Xpp3Dom) config).getChild(parameterName) : null;
@@ -36,7 +37,7 @@ public abstract class PluginUtils {
         return currentTag.getValue();
     }
 
-    public static Xpp3Dom getConfiguration(Plugin plugin, String goal)   {
+    public static Xpp3Dom getConfiguration(Plugin plugin, String goal) {
         Object configuration = plugin.getConfiguration();
 
         if (configuration == null && goal != null) {

@@ -13,16 +13,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static ru.rzn.gmyasoedov.maven.plugin.reader.util.PluginUtils.PLUGIN_CONTEXT_PREFIX;
+
 public class MavenPluginConverter {
     public static MavenPlugin convert(Plugin plugin, MavenProject mavenProject) {
-        Object contextValue = mavenProject
-                .getContextValue("gPlugin:" + plugin.getGroupId() + ":" + plugin.getArtifactId());
-        if (contextValue == null) return null;
         MavenPlugin mavenPlugin = new MavenPlugin();
         mavenPlugin.setGroupId(plugin.getGroupId());
         mavenPlugin.setArtifactId(plugin.getArtifactId());
         mavenPlugin.setVersion(plugin.getVersion());
-        mavenPlugin.setBody(getPluginBody(contextValue, plugin.getDependencies()));
+        Object contextValue = mavenProject.getContextValue(
+                PLUGIN_CONTEXT_PREFIX + plugin.getGroupId() + ":" + plugin.getArtifactId()
+        );
+        if (contextValue != null) {
+            mavenPlugin.setBody(getPluginBody(contextValue, plugin.getDependencies()));
+        }
         return mavenPlugin;
     }
 
