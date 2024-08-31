@@ -33,10 +33,11 @@
     <packaging>maven-plugin</packaging>
 
     <dependencies>
-        <dependency>
+        <!--revert when deployed on maven central-->
+        <!--<dependency>
             <groupId>ru.rzn.gmyasoedov</groupId>
             <artifactId>maven-project-model</artifactId>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
