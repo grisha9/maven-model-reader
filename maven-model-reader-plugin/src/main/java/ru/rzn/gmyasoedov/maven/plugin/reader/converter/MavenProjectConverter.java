@@ -9,6 +9,7 @@ import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenArtifact;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenPlugin;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProject;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenResource;
+import ru.rzn.gmyasoedov.maven.plugin.reader.util.ObjectUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import static ru.rzn.gmyasoedov.maven.plugin.reader.util.MavenContextUtils.*;
+import static ru.rzn.gmyasoedov.maven.plugin.reader.util.ObjectUtils.emptyStringIfNull;
 
 public class MavenProjectConverter {
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
@@ -35,10 +37,10 @@ public class MavenProjectConverter {
         }
 
         MavenProject result = new MavenProject();
-        result.setGroupId(mavenProject.getGroupId());
-        result.setArtifactId(mavenProject.getArtifactId());
-        result.setVersion(mavenProject.getVersion());
-        result.setPackaging(mavenProject.getPackaging());
+        result.setGroupId(emptyStringIfNull(mavenProject.getGroupId()));
+        result.setArtifactId(emptyStringIfNull(mavenProject.getArtifactId()));
+        result.setVersion(emptyStringIfNull(mavenProject.getVersion()));
+        result.setPackaging(ObjectUtils.defaultIfNull(mavenProject.getPackaging(), "jar"));
         result.setName(mavenProject.getName());
         result.setBasedir(mavenProject.getBasedir().getAbsolutePath());
         result.setFilePath(mavenProject.getFile().getAbsolutePath());

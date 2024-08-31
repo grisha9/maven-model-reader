@@ -4,13 +4,16 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.project.MavenProject;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenArtifact;
 
+import static ru.rzn.gmyasoedov.maven.plugin.reader.util.ObjectUtils.emptyStringIfNull;
+
 
 public class MavenArtifactConverter {
     public static MavenArtifact convert(Artifact artifact) {
         MavenArtifact result = new MavenArtifact();
-        result.setGroupId(artifact.getGroupId());
-        result.setArtifactId(artifact.getArtifactId());
-        result.setVersion(artifact.getBaseVersion() != null ? artifact.getBaseVersion() : artifact.getVersion());
+        result.setGroupId(emptyStringIfNull(artifact.getGroupId()));
+        result.setArtifactId(emptyStringIfNull(artifact.getArtifactId()));
+        String version = artifact.getBaseVersion() != null ? artifact.getBaseVersion() : artifact.getVersion();
+        result.setVersion(emptyStringIfNull(version));
         result.setType(artifact.getType());
         result.setClassifier(artifact.getClassifier());
         result.setScope(artifact.getScope());
