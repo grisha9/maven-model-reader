@@ -38,9 +38,10 @@ public class MapResultConverter {
         for (MavenProject sortedProject : projects) {
             projectByDirectoryMap.put(sortedProject.getBasedir(), sortedProject);
         }
-        MavenProjectContainer container = new MavenProjectContainer(MavenProjectConverter
-                .convert(topLevelProject, context));
-        fillContainer(container, projectByDirectoryMap, context);
+        MavenProjectContainer container = new MavenProjectContainer(
+                MavenProjectConverter.convert(topLevelProject, session, context)
+        );
+        fillContainer(container, projectByDirectoryMap, context, session);
 
         return container;
     }
@@ -55,7 +56,8 @@ public class MapResultConverter {
 
     private static void fillContainer(MavenProjectContainer rootContainer,
                                       Map<File, MavenProject> projectByDirectoryMap,
-                                      BuildContext context) {
+                                      BuildContext context,
+                                      MavenSession session) {
         ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProject project = rootContainer.getProject();
         for (String module : project.getModulesDir()) {
             if (module == null || module.isEmpty()) continue;
@@ -65,10 +67,10 @@ public class MapResultConverter {
             if (mavenProjectByModuleFile == null) continue;
 
             MavenProjectContainer projectContainer = new MavenProjectContainer(
-                    MavenProjectConverter.convert(mavenProjectByModuleFile, context)
+                    MavenProjectConverter.convert(mavenProjectByModuleFile, session, context)
             );
             rootContainer.getModules().add(projectContainer);
-            fillContainer(projectContainer, projectByDirectoryMap, context);
+            fillContainer(projectContainer, projectByDirectoryMap, context, session);
         }
     }
 }

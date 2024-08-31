@@ -19,17 +19,18 @@ public class ListResultConverter {
         result.pluginNotResolved = buildErrors.pluginNotResolved;
         result.exceptions = buildErrors.exceptions;
         result.settings = MavenSettingsConverter.convert(session);
-        result.mavenProjects = getProjects(session.getAllProjects(), context);
+        result.mavenProjects = getProjects(session, context);
         return result;
     }
 
     private static List<ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProject> getProjects(
-            List<MavenProject> projects, BuildContext context
+            MavenSession session, BuildContext context
     ) {
+        List<MavenProject> projects = session.getAllProjects();
         if (projects == null || projects.isEmpty()) return Collections.emptyList();
         List<ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProject> result = new ArrayList<>(projects.size());
         for (MavenProject each : projects) {
-            result.add(MavenProjectConverter.convert(each, context));
+            result.add(MavenProjectConverter.convert(each, session, context));
         }
         return result;
     }

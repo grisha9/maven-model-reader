@@ -2,6 +2,7 @@ package ru.rzn.gmyasoedov.maven.plugin.reader.converter;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.Resource;
 import ru.rzn.gmyasoedov.maven.plugin.reader.BuildContext;
@@ -21,9 +22,10 @@ import static ru.rzn.gmyasoedov.maven.plugin.reader.util.ObjectUtils.emptyString
 
 public class MavenProjectConverter {
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
-    private static final int MAX_PROJECT_RECURSION_DEPTH = 3;
+    private static final int MAX_PROJECT_RECURSION_DEPTH = 10;
 
     public static MavenProject convert(org.apache.maven.project.MavenProject mavenProject,
+                                       MavenSession session,
                                        BuildContext context) {
         List<MavenPlugin> plugins = getPlugins(mavenProject, context);
 
@@ -33,7 +35,9 @@ public class MavenProjectConverter {
         }
         List<String> modulesDir = convertModules(mavenProject.getBasedir(), mavenProject.getModules());
         if (context.readOnly) {
-            addReferencedProjects(mavenProject, artifacts, 0);
+            HashSet<MavenArtifact> mavenArtifacts = new HashSet<>(artifacts);
+            addReferencedProjects(mavenProject, mavenArtifacts, context.readArtifactCache, session, 0);
+            artifacts = new ArrayList<>(mavenArtifacts);
         }
 
         MavenProject result = new MavenProject();
@@ -84,10 +88,7 @@ public class MavenProjectConverter {
         }
         List<MavenPlugin> plugins = new ArrayList<>(mavenProject.getBuildPlugins().size());
         for (Plugin plugin : mavenProject.getBuildPlugins()) {
-            MavenPlugin convertedPlugin = MavenPluginConverter.convert(plugin, mavenProject);
-            if (convertedPlugin != null) {
-                plugins.add(convertedPlugin);
-            }
+            plugins.add(MavenPluginConverter.convert(plugin, mavenProject));
         }
         return plugins;
     }
@@ -191,18 +192,36 @@ public class MavenProjectConverter {
     }
 
     private static void addReferencedProjects(
-            org.apache.maven.project.MavenProject mavenProject, List<MavenArtifact> artifacts, int depth
+            org.apache.maven.project.MavenProject mavenProject,
+            Set<MavenArtifact> artifacts,
+            Map<String, MavenArtifact> artifactMap,
+            MavenSession session,
+            int depth
     ) {
-        if (depth > MAX_PROJECT_RECURSION_DEPTH) return;
+        if (depth > getMaxProjectRecursionDepth(session)) return;
         Map<String, org.apache.maven.project.MavenProject> references = mavenProject.getProjectReferences();
         if (references != null) {
             for (org.apache.maven.project.MavenProject each : references.values()) {
-                MavenArtifact mavenArtifact = MavenArtifactConverter.convert(each);
+                MavenArtifact mavenArtifact = getMavenArtifact(each, artifactMap);
                 artifacts.add(mavenArtifact);
-                // todo potential memory leak
-                // solution: not create duplicate MavenArtifactConverter and save to map projectId(artifactId) -> subprojects
-                //addReferencedProjects(each, artifacts, depth + 1);
+                //potential memory leak
+                addReferencedProjects(each, artifacts, artifactMap, session, depth + 1);
             }
         }
+    }
+
+    private static int getMaxProjectRecursionDepth(MavenSession session) {
+        if (session.getAllProjects().size() > 50) return 4;
+        return MAX_PROJECT_RECURSION_DEPTH;
+    }
+
+    private static MavenArtifact getMavenArtifact(
+            org.apache.maven.project.MavenProject each, Map<String, MavenArtifact> artifactMap
+    ) {
+        MavenArtifact artifact = artifactMap.get(each.getArtifactId());
+        if (artifact != null) return artifact;
+        MavenArtifact mavenArtifact = MavenArtifactConverter.convert(each);
+        artifactMap.put(each.getArtifactId(), mavenArtifact);
+        return mavenArtifact;
     }
 }

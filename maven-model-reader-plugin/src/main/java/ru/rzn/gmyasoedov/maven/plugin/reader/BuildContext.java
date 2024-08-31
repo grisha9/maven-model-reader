@@ -1,5 +1,9 @@
 package ru.rzn.gmyasoedov.maven.plugin.reader;
 
+import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenArtifact;
+
+import java.util.TreeMap;
+
 public class BuildContext {
     public final boolean addDependenciesInfo;
     public final boolean allPluginsInfo;
@@ -7,6 +11,7 @@ public class BuildContext {
     public final boolean fullResourceInfo;
     public final boolean resultAsTree;
     public final boolean readOnly;
+    public final TreeMap<String, MavenArtifact> readArtifactCache = new TreeMap<>();
 
     public BuildContext(
             boolean addDependenciesInfo,
