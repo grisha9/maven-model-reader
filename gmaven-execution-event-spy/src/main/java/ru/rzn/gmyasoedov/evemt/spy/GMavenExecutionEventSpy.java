@@ -18,8 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static ru.rzn.gmyasoedov.evemt.spy.GMavenEventSpyConstants.GMAVEN_DEPENDENCY_GRAPH;
-import static ru.rzn.gmyasoedov.evemt.spy.GMavenEventSpyConstants.MAVEN_MODEL_READER_PLUGIN;
+import static ru.rzn.gmyasoedov.evemt.spy.GMavenEventSpyConstants.*;
 
 @Named
 public class GMavenExecutionEventSpy extends AbstractEventSpy {
@@ -41,7 +40,7 @@ public class GMavenExecutionEventSpy extends AbstractEventSpy {
             List<Throwable> exceptions = ((MavenExecutionResult) event).getExceptions();
             if (exceptions == null || exceptions.isEmpty()) return;
             String resultErrorJson = getErrorJson((MavenExecutionResult) event);
-            String resultFilePath = System.getenv("resultFilePath");
+            String resultFilePath = getResultFilePath(session);
             printErrorResult(resultErrorJson, resultFilePath);
         }
     }
@@ -120,5 +119,12 @@ public class GMavenExecutionEventSpy extends AbstractEventSpy {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String getResultFilePath(MavenSession session) {
+        String resultFilePath = session.getUserProperties().getProperty(RESULT_FILE_PATH);
+        if (resultFilePath != null) return resultFilePath;
+        resultFilePath = session.getSystemProperties().getProperty(RESULT_FILE_PATH);
+        return resultFilePath;
     }
 }
