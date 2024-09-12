@@ -56,7 +56,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         }
 
         Object result = getResult(context);
-        printResultPOM(result, session);
+        printResult(result, session);
     }
 
     public void resolvePluginBody(

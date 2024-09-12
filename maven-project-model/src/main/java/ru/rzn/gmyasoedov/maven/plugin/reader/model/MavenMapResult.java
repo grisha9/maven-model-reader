@@ -8,5 +8,5 @@ public class MavenMapResult {
     public  boolean pluginNotResolved;
     public  MavenSettings settings;
     public  MavenProjectContainer container;
-    public  List<MavenException> exceptions = Collections.emptyList();
+    public  List<String> exceptions = Collections.emptyList();
 }

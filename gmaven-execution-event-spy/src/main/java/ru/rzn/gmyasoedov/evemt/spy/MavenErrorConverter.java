@@ -1,4 +1,4 @@
-package ru.rzn.gmyasoedov.maven.plugin.reader.converter;
+package ru.rzn.gmyasoedov.evemt.spy;
 
 import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.model.Plugin;
@@ -7,13 +7,8 @@ import org.apache.maven.plugin.PluginResolutionException;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.ProjectBuildingResult;
 import org.codehaus.plexus.util.ExceptionUtils;
-import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.transfer.ArtifactTransferException;
-import ru.rzn.gmyasoedov.maven.plugin.reader.GAbstractMojo;
-import ru.rzn.gmyasoedov.maven.plugin.reader.model.BuildErrors;
-import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenException;
-import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenId;
-import ru.rzn.gmyasoedov.maven.plugin.reader.model.SimpleMavenId;
+import ru.rzn.gmyasoedov.evemt.spy.model.BuildErrors;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,27 +21,24 @@ public class MavenErrorConverter {
             return new BuildErrors();
 
         boolean pluginNotResolved = false;
-        List<MavenException> mavenExceptions = new ArrayList<>(exceptions.size());
+        List<String> mavenExceptions = new ArrayList<>(exceptions.size());
         for (Throwable each : exceptions) {
             Throwable rootCause = getRootError(each);
             if (each instanceof PluginResolutionException) {
                 PluginResolutionException e = (PluginResolutionException) each;
                 Plugin plugin = e.getPlugin();
                 if (plugin == null) continue;
-                String packageName = GAbstractMojo.class.getPackage().getName();
-                if (packageName.equalsIgnoreCase(plugin.getGroupId())
+                if (plugin.getGroupId() != null && plugin.getGroupId().contains("ru.rzn.gmyasoedov")
                         && "maven-model-reader-plugin".equalsIgnoreCase(plugin.getArtifactId())) {
                     pluginNotResolved = true;
                 } else {
-                    mavenExceptions.add(getMavenException(e.getMessage(), toMavenId(plugin), null));
+                    mavenExceptions.add(getMavenException(e.getMessage()));
                 }
             } else if (rootCause instanceof ArtifactTransferException) {
-                Artifact artifact = ((ArtifactTransferException) rootCause).getArtifact();
                 String message = rootCause.getMessage() != null ? rootCause.getMessage() : each.getMessage();
-                mavenExceptions.add(getMavenException(message, toMavenId(artifact), null));
+                mavenExceptions.add(getMavenException(message));
             } else if (each instanceof ArtifactTransferException) {
-                Artifact artifact = ((ArtifactTransferException) each).getArtifact();
-                mavenExceptions.add(getMavenException(each.getMessage(), toMavenId(artifact), null));
+                mavenExceptions.add(getMavenException(each.getMessage()));
             } else if (each instanceof ProjectBuildingException) {
                 List<ProjectBuildingResult> results = ((ProjectBuildingException) each).getResults();
                 for (ProjectBuildingResult buildingResult : results) {
@@ -57,49 +49,28 @@ public class MavenErrorConverter {
             } else {
                 String rootMessage = rootCause != null ? rootCause.getMessage() : null;
                 String message = rootMessage != null ? rootMessage : each.getMessage();
-                mavenExceptions.add(getMavenException(message, null, null));
+                mavenExceptions.add(getMavenException(message));
             }
         }
         BuildErrors errors = new BuildErrors();
-        errors.setPluginNotResolved(pluginNotResolved);
-        errors.setExceptions(mavenExceptions);
+        errors.pluginNotResolved = pluginNotResolved;
+        errors.exceptions = mavenExceptions;
         return errors;
     }
 
-    private static MavenException toMavenException(ModelProblem problem) {
+    private static String toMavenException(ModelProblem problem) {
         String message = problem.getMessage();
         String source = problem.getSource();
         int lineNumber = problem.getLineNumber();
         int columnNumber = problem.getColumnNumber();
         String messageWithCoordinate = String.format("%s:%s:%s", source, lineNumber, columnNumber);
         message = message.replace(source, messageWithCoordinate);
-        return getMavenException(message, null, source);
+        return getMavenException(message.replace("\"", ""));
     }
 
-    private static MavenException getMavenException(String message, MavenId mavenId, String source) {
-        MavenException exception = new MavenException();
-        exception.setMessage(message);
-        exception.setProjectFilePath(source);
-        exception.setMavenId(mavenId);
-        return exception;
-    }
-
-    private static SimpleMavenId toMavenId(Plugin plugin) {
-        if (plugin == null) return null;
-        SimpleMavenId mavenId = new SimpleMavenId();
-        mavenId.setArtifactId(plugin.getArtifactId());
-        mavenId.setGroupId(plugin.getGroupId());
-        mavenId.setVersion(plugin.getVersion());
-        return mavenId;
-    }
-
-    private static SimpleMavenId toMavenId(Artifact plugin) {
-        if (plugin == null) return null;
-        SimpleMavenId mavenId = new SimpleMavenId();
-        mavenId.setArtifactId(plugin.getArtifactId());
-        mavenId.setGroupId(plugin.getGroupId());
-        mavenId.setVersion(plugin.getVersion());
-        return mavenId;
+    private static String getMavenException(String message) {
+        if (message == null) return "Unknown error. See Maven log";
+        return message.replace("\"", "");
     }
 
     private static Throwable getRootError(Throwable each) {

@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.List;
 
 public class MavenMapResult implements Serializable {
-    public  boolean pluginNotResolved;
+    public boolean pluginNotResolved;
     public MavenSettings settings;
-    public  MavenProjectContainer container;
-    public  List<MavenException> exceptions = Collections.emptyList();
+    public MavenProjectContainer container;
+    public List<String> exceptions = Collections.emptyList();
 }

@@ -47,7 +47,7 @@ public class TreeArtifactProjectModelMojo extends GAbstractMojo {
             result.add(MavenProjectDependencyTreeConverter.convert(project, treeNodes));
         }
         if (result.isEmpty()) return;
-        printResult(result, session, GMAVEN_TREE_JSON);
+        printResult(result, session);
     }
 
     private static boolean isEmpty(DependencyNode dependencyNode) {

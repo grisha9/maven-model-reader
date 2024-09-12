@@ -4,7 +4,6 @@ import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
 import ru.rzn.gmyasoedov.maven.plugin.reader.BuildContext;
-import ru.rzn.gmyasoedov.maven.plugin.reader.model.BuildErrors;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenMapResult;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProjectContainer;
 
@@ -18,10 +17,7 @@ import java.util.TreeMap;
 public class MapResultConverter {
 
     public static MavenMapResult convert(MavenSession session, BuildContext context) {
-        BuildErrors buildErrors = MavenErrorConverter.convert(session.getResult());
         MavenMapResult result = new MavenMapResult();
-        result.pluginNotResolved = buildErrors.pluginNotResolved;
-        result.exceptions = buildErrors.exceptions;
         result.settings = MavenSettingsConverter.convert(session);
         result.container = getProjectsContainer(session, context);
         return result;

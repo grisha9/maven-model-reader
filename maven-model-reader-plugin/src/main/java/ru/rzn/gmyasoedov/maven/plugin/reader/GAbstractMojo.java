@@ -42,6 +42,8 @@ public abstract class GAbstractMojo extends AbstractMojo {
 
     @Parameter(property = "processingPluginGAIds", defaultValue = "")
     protected Set<String> processingPluginGAIds;
+    @Parameter(property = "resultFilePath", defaultValue = "")
+    protected String resultFilePath;
     @Parameter(property = "addDependenciesInfo", defaultValue = "false")
     protected boolean addDependenciesInfo;
     @Parameter(property = "allPluginsInfo", defaultValue = "true")
@@ -122,17 +124,31 @@ public abstract class GAbstractMojo extends AbstractMojo {
         }
     }
 
-    protected void printResultPOM(Object result, MavenSession session) {
-        printResult(result, session, GMAVEN_POM_JSON);
+    protected void printResult(Object result, MavenSession session) {
+        Path resultPath = getResultPath(session);
+        printResult(result, session, resultPath);
     }
 
-    protected void printResult(Object result, MavenSession session, String fileName) {
+    private Path getResultPath(MavenSession session) {
+        if (resultFilePath == null || resultFilePath.isEmpty()) {
+            Path path = getBuildDirectory(session.getTopLevelProject()).resolve(GMAVEN_POM_JSON);
+            getLog().info("result file path: " + path);
+            return path;
+        }
+        Path resultPath = Paths.get(resultFilePath);
+        if (resultPath.toFile().isDirectory()) {
+            throw new RuntimeException("Parameter resultFilePath is directory! Must be a file.");
+        }
+        return resultPath;
+    }
+
+    protected void printResult(Object result, MavenSession session, Path resultPath) {
         MavenProject mavenProject = session.getTopLevelProject();
         if (mavenProject == null) {
             throw new RuntimeException("Maven top level project not found");
         }
-        Path buildDirectory = getBuildDirectory(mavenProject);
-        Path resultPath = buildDirectory.resolve(fileName);
+
+        Path buildDirectory = resultPath.getParent();
         try {
             if (!buildDirectory.toFile().exists()) {
                 Files.createDirectory(buildDirectory);
