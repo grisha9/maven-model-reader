@@ -126,7 +126,7 @@ public abstract class GAbstractMojo extends AbstractMojo {
 
     protected void printResult(Object result, MavenSession session) {
         Path resultPath = getResultPath(session);
-        printResult(result, session, resultPath);
+        printResult(result, resultPath);
     }
 
     private Path getResultPath(MavenSession session) {
@@ -142,12 +142,7 @@ public abstract class GAbstractMojo extends AbstractMojo {
         return resultPath;
     }
 
-    protected void printResult(Object result, MavenSession session, Path resultPath) {
-        MavenProject mavenProject = session.getTopLevelProject();
-        if (mavenProject == null) {
-            throw new RuntimeException("Maven top level project not found");
-        }
-
+    protected void printResult(Object result, Path resultPath) {
         Path buildDirectory = resultPath.getParent();
         try {
             if (!buildDirectory.toFile().exists()) {
