@@ -1,6 +1,7 @@
 package ru.rzn.gmyasoedov.maven.plugin.reader;
 
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenArtifact;
+import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenMapResult;
 
 import java.util.TreeMap;
 
@@ -11,6 +12,7 @@ public class BuildContext {
     public final boolean fullResourceInfo;
     public final boolean resultAsTree;
     public final boolean readOnly;
+    public final MavenMapResult previousResult;
     public final TreeMap<String, MavenArtifact> readArtifactCache = new TreeMap<>();
 
     public BuildContext(
@@ -18,7 +20,8 @@ public class BuildContext {
             boolean allPluginsInfo,
             boolean addRemoteRepositoryInfo,
             boolean fullResourceInfo,
-            boolean resultAsTree
+            boolean resultAsTree,
+            MavenMapResult previousResult
     ) {
         this.addDependenciesInfo = addDependenciesInfo;
         this.allPluginsInfo = allPluginsInfo;
@@ -26,6 +29,7 @@ public class BuildContext {
         this.fullResourceInfo = fullResourceInfo;
         this.resultAsTree = resultAsTree;
         this.readOnly = false;
+        this.previousResult = previousResult;
     }
 
     public BuildContext(
@@ -38,5 +42,6 @@ public class BuildContext {
         this.fullResourceInfo = context.fullResourceInfo;
         this.resultAsTree = context.resultAsTree;
         this.readOnly = readOnly;
+        this.previousResult = context.previousResult;
     }
 }

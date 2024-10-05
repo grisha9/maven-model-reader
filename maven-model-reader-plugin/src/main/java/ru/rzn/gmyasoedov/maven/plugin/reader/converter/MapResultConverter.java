@@ -17,6 +17,9 @@ import java.util.TreeMap;
 public class MapResultConverter {
 
     public static MavenMapResult convert(MavenSession session, BuildContext context) {
+        if (context.previousResult != null) {
+            return MapResultIncrementalConverter.convert(session, context);
+        }
         MavenMapResult result = new MavenMapResult();
         result.settings = MavenSettingsConverter.convert(session);
         result.container = getProjectsContainer(session, context);

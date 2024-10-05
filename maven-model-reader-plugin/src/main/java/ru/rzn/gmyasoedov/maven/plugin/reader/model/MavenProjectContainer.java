@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class MavenProjectContainer implements Serializable {
-    private final MavenProject project;
+    private MavenProject project;
     private final List<MavenProjectContainer> modules;
 
     public MavenProjectContainer() {
@@ -21,6 +21,10 @@ public class MavenProjectContainer implements Serializable {
 
     public MavenProject getProject() {
         return project;
+    }
+
+    public void setProject(MavenProject project) {
+        this.project = project;
     }
 
     public List<MavenProjectContainer> getModules() {

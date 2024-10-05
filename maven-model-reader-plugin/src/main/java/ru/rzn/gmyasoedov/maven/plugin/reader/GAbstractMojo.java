@@ -19,11 +19,9 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
+import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenMapResult;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,6 +54,8 @@ public abstract class GAbstractMojo extends AbstractMojo {
     protected boolean resultAsTree;
     @Parameter(property = "jsonPrettyPrinting", defaultValue = "false")
     protected boolean jsonPrettyPrinting;
+    @Parameter(property = "incremental", defaultValue = "false")
+    protected boolean incremental;
 
     protected final Map<String, Field> dependencyCoordinateFieldMap = getDependencyCoordinateFieldMap();
     protected List<ArtifactResolutionException> resolveArtifactErrors = new ArrayList<>();
@@ -71,7 +71,18 @@ public abstract class GAbstractMojo extends AbstractMojo {
     }
 
     protected BuildContext getExecuteContext() {
-        return new BuildContext(addDependenciesInfo, allPluginsInfo, addRemoteRepositoryInfo, fullResourceInfo, resultAsTree);
+        return new BuildContext(
+                addDependenciesInfo, allPluginsInfo, addRemoteRepositoryInfo,
+                fullResourceInfo, resultAsTree, getIncrementalState()
+        );
+    }
+
+    private MavenMapResult getIncrementalState() {
+        if (!incremental) return null;
+        if (filePathIsEmpty()) return null;
+        Path path = Paths.get(resultFilePath);
+        if (!path.toFile().exists()) return null;
+        return getPreviousResult(path);
     }
 
     protected List<String> resolveArtifacts(
@@ -130,7 +141,7 @@ public abstract class GAbstractMojo extends AbstractMojo {
     }
 
     private Path getResultPath(MavenSession session) {
-        if (resultFilePath == null || resultFilePath.isEmpty()) {
+        if (filePathIsEmpty()) {
             Path path = getBuildDirectory(session.getTopLevelProject()).resolve(GMAVEN_POM_JSON);
             getLog().info("result file path: " + path);
             return path;
@@ -140,6 +151,10 @@ public abstract class GAbstractMojo extends AbstractMojo {
             throw new RuntimeException("Parameter resultFilePath is directory! Must be a file.");
         }
         return resultPath;
+    }
+
+    private boolean filePathIsEmpty() {
+        return resultFilePath == null || resultFilePath.isEmpty();
     }
 
     protected void printResult(Object result, Path resultPath) {
@@ -155,6 +170,17 @@ public abstract class GAbstractMojo extends AbstractMojo {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    protected MavenMapResult getPreviousResult(Path resultPath) {
+        try {
+            try (Reader reader = new FileReader(resultPath.toFile())) {
+                return new Gson().fromJson(reader, MavenMapResult.class);
+            }
+        } catch (Exception e) {
+            getLog().warn("Incremental previous state not found!", e);
+            return null;
         }
     }
 
