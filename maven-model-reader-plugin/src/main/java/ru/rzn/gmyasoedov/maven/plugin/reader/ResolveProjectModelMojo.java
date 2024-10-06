@@ -43,6 +43,9 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         if (!context.readOnly && !getResolvedPluginGAIds().isEmpty()) {
             getLog().info("resolvedArtifactIds " + resolvedPluginGAIds);
         }
+        if (context.previousResult != null) {
+            printLogIncrementalUpdate();
+        }
         resolveArtifactErrors = new ArrayList<>();
         Set<String> gaPluginSet = getGAPluginForBodyProcessing();
         getLog().info("ResolveProjectMojo: " + gaPluginSet);
@@ -57,6 +60,16 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
 
         Object result = getResult(context);
         printResult(result, session);
+    }
+
+    private void printLogIncrementalUpdate() {
+        List<MavenProject> projects = session.getProjects();
+        if (projects == null || projects.isEmpty()) return;
+        getLog().info("Incremental update projects start:");
+        for (MavenProject project : projects) {
+            getLog().info(project.getArtifactId());
+        }
+        getLog().info("");
     }
 
     public void resolvePluginBody(

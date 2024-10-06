@@ -82,7 +82,11 @@ public abstract class GAbstractMojo extends AbstractMojo {
         if (filePathIsEmpty()) return null;
         Path path = Paths.get(resultFilePath);
         if (!path.toFile().exists()) return null;
-        return getPreviousResult(path);
+        MavenMapResult previousResult = getPreviousResult(path);
+        if (previousResult != null && previousResult.container != null) {
+            return previousResult;
+        }
+        return null;
     }
 
     protected List<String> resolveArtifacts(
