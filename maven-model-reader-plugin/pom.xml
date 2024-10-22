@@ -24,10 +24,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>ru.rzn.gmyasoedov</groupId>
+    <groupId>io.github.grisha9</groupId>
     <artifactId>maven-model-reader-plugin</artifactId>
-    <version>0.2</version>
+    <version>0.3</version>
     <packaging>maven-plugin</packaging>
+
+    <url>https://github.com/grisha9/maven-model-reader</url>
+    <description>Project model resolver</description>
 
     <properties>
         <maven.model.reader>1.0-SNAPSHOT</maven.model.reader>
@@ -63,9 +66,27 @@
         </dependency>
     </dependencies>
 
+    <developers>
+        <developer>
+            <id>gmyasoedov</id>
+            <name>Grigoriy Myasoedov</name>
+            <email>grisha0909@gmail.com</email>
+        </developer>
+    </developers>
+    <licenses>
+        <license>
+            <name>Apache License Version 2.0 Public</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0/</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/grisha9/maven-model-reader</url>
+    </scm>
+
     <build>
         <plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
@@ -82,6 +103,67 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.0</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.4.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <tokenAuth>true</tokenAuth>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <keyname>${deploy.key}</keyname>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+          <!--  <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>-->
         </plugins>
     </build>
+
 </project>

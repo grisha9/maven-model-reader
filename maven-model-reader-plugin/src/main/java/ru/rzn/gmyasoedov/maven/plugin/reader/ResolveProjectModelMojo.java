@@ -65,10 +65,8 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
     private void printLogIncrementalUpdate() {
         List<MavenProject> projects = session.getProjects();
         if (projects == null || projects.isEmpty()) return;
-        getLog().info("Incremental update projects start:");
-        for (MavenProject project : projects) {
-            getLog().info(project.getArtifactId());
-        }
+        int allSize = session.getAllProjects().size();
+        getLog().info(String.format("Incremental update projects start: %s/%s", projects.size(), allSize));
         getLog().info("");
     }
 
