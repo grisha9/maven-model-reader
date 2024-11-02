@@ -28,8 +28,7 @@ public class MavenErrorConverter {
                 PluginResolutionException e = (PluginResolutionException) each;
                 Plugin plugin = e.getPlugin();
                 if (plugin == null) continue;
-                if (plugin.getGroupId() != null && plugin.getGroupId().contains("ru.rzn.gmyasoedov")
-                        && "maven-model-reader-plugin".equalsIgnoreCase(plugin.getArtifactId())) {
+                if (isGMavenPlugin(plugin)) {
                     pluginNotResolved = true;
                 } else {
                     mavenExceptions.add(getMavenException(e.getMessage()));
@@ -56,6 +55,13 @@ public class MavenErrorConverter {
         errors.pluginNotResolved = pluginNotResolved;
         errors.exceptions = mavenExceptions;
         return errors;
+    }
+
+    private static boolean isGMavenPlugin(Plugin plugin) {
+        String groupId = plugin.getGroupId();
+        return groupId != null
+                && (groupId.contains("ru.rzn.gmyasoedov") || groupId.contains("io.github.grisha9"))
+                && "maven-model-reader-plugin".equalsIgnoreCase(plugin.getArtifactId());
     }
 
     private static String toMavenException(ModelProblem problem) {

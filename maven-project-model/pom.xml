@@ -22,17 +22,77 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>ru.rzn.gmyasoedov</groupId>
-        <artifactId>maven-model-reader</artifactId>
-        <version>0.2</version>
-    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.github.grisha9</groupId>
     <artifactId>maven-project-model</artifactId>
+    <version>0.3</version>
+
+    <url>https://github.com/grisha9/maven-model-reader</url>
+    <description>Maven Project model for io.github.grisha9:maven-model-reader-plugin</description>
+
+    <properties>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.min.version>3.3.1</maven.min.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <developers>
+        <developer>
+            <id>gmyasoedov</id>
+            <name>Grigoriy Myasoedov</name>
+            <email>grisha0909@gmail.com</email>
+        </developer>
+    </developers>
+    <licenses>
+        <license>
+            <name>Apache License Version 2.0 Public</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0/</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/grisha9/maven-model-reader</url>
+    </scm>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.0</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.4.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <tokenAuth>true</tokenAuth>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <keyname>${deploy.key}</keyname>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -46,10 +106,11 @@
                         <configuration>
 
                             <target>
-                                <mkdir dir="${basedir}/target/generated-sources/gmodel"/>
-                                <copy todir="${basedir}/target/generated-sources/gmodel">
-                                    <fileset dir="${basedir}/../maven-model-reader-plugin/src/main/java/ru/rzn/gmyasoedov/maven/plugin/reader/model"
-                                             />
+                                <mkdir dir="${basedir}/target/generated-sources/annotations"/>
+                                <copy todir="${basedir}/target/generated-sources/annotations">
+                                    <fileset
+                                            dir="${basedir}/../maven-model-reader-plugin/src/main/java/ru/rzn/gmyasoedov/maven/plugin/reader/model"
+                                    />
                                 </copy>
                             </target>
                         </configuration>
