@@ -26,7 +26,7 @@
 
     <groupId>io.github.grisha9</groupId>
     <artifactId>maven-model-reader-plugin</artifactId>
-    <version>0.3</version>
+    <version>0.4</version>
     <packaging>maven-plugin</packaging>
 
     <url>https://github.com/grisha9/maven-model-reader</url>
