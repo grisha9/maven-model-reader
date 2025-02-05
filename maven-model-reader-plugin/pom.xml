@@ -26,7 +26,7 @@
 
     <groupId>io.github.grisha9</groupId>
     <artifactId>maven-model-reader-plugin</artifactId>
-    <version>0.4</version>
+    <version>0.5</version>
     <packaging>maven-plugin</packaging>
 
     <url>https://github.com/grisha9/maven-model-reader</url>
@@ -41,11 +41,6 @@
     </properties>
 
     <dependencies>
-        <!--revert when deployed on maven central-->
-        <!--<dependency>
-            <groupId>ru.rzn.gmyasoedov</groupId>
-            <artifactId>maven-project-model</artifactId>
-        </dependency>-->
 
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
@@ -150,19 +145,7 @@
                     </execution>
                 </executions>
             </plugin>
-          <!--  <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>-->
+
         </plugins>
     </build>
 
