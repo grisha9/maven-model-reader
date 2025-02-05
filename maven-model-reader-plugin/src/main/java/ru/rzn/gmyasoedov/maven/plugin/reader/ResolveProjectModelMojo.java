@@ -181,7 +181,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
             return Collections.emptyList();
         }
 
-        List<DependencyCoordinate> dependencies = getDependencyCoordinatesForAnnotationProccessor(plugin);
+        List<DependencyCoordinate> dependencies = getDependencyCoordinatesForAnnotationProcessor(plugin, project);
         getLog().debug("Dependencies for resolve " + dependencies);
         List<String> paths = resolveArtifacts(dependencies, project, session);
         if (!paths.isEmpty()) {
@@ -190,8 +190,9 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         return paths;
     }
 
-    private List<DependencyCoordinate> getDependencyCoordinatesForAnnotationProccessor(Plugin plugin)
-            throws MojoExecutionException {
+    private List<DependencyCoordinate> getDependencyCoordinatesForAnnotationProcessor(
+            Plugin plugin, MavenProject project
+    ) throws MojoExecutionException {
         List<DependencyCoordinate> dependencies = new ArrayList<>();
         Xpp3Dom configuration = (Xpp3Dom) plugin.getConfiguration();
         for (Xpp3Dom dom : configuration.getChildren()) {
@@ -200,6 +201,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
                 for (Xpp3Dom child : dom.getChildren()) {
                     DependencyCoordinate coordinate = getDependencyCoordinate(child);
                     if (coordinate != null) {
+                        checkVersionForDM(coordinate, project);
                         dependencies.add(coordinate);
                     }
                 }
@@ -207,6 +209,24 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
             }
         }
         return dependencies;
+    }
+
+    private void checkVersionForDM(DependencyCoordinate coordinate, MavenProject project) {
+        String version = coordinate.getVersion();
+        if (version != null && !version.isEmpty()) return;
+        if (coordinate.getArtifactId() == null || coordinate.getGroupId() == null) return;
+        DependencyManagement dm = project.getDependencyManagement();
+        if (dm == null) return;
+        List<Dependency> dependencies = dm.getDependencies();
+        if (dependencies == null) return;
+        for (Dependency each : dependencies) {
+            if (coordinate.getArtifactId().equals(each.getArtifactId())
+                    && coordinate.getGroupId().equals(each.getGroupId())
+                    && !"pom".equals(each.getType())) {
+                coordinate.setVersion(each.getVersion());
+                return;
+            }
+        }
     }
 
     private DependencyCoordinate getDependencyCoordinate(Xpp3Dom dom) throws MojoExecutionException {
@@ -223,8 +243,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
                 throw new MojoExecutionException(e.getLocalizedMessage(), e);
             }
         }
-        return coordinate.getArtifactId() == null || coordinate.getGroupId() == null || coordinate.getVersion() == null
-                ? null : coordinate;
+        return coordinate.getArtifactId() == null || coordinate.getGroupId() == null ? null : coordinate;
     }
 
     private Object getResult(BuildContext context) {
