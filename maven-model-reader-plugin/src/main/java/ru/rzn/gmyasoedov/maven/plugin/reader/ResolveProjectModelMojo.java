@@ -199,9 +199,8 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
             if ("annotationProcessorPaths".equalsIgnoreCase(dom.getName())) {
                 getLog().debug("annotationProcessorPaths=" + dom);
                 for (Xpp3Dom child : dom.getChildren()) {
-                    DependencyCoordinate coordinate = getDependencyCoordinate(child);
+                    DependencyCoordinate coordinate = getDependencyCoordinate(child, project);
                     if (coordinate != null) {
-                        checkVersionForDM(coordinate, project);
                         dependencies.add(coordinate);
                     }
                 }
@@ -229,7 +228,9 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
         }
     }
 
-    private DependencyCoordinate getDependencyCoordinate(Xpp3Dom dom) throws MojoExecutionException {
+    private DependencyCoordinate getDependencyCoordinate(
+            Xpp3Dom dom, MavenProject project
+    ) throws MojoExecutionException {
         DependencyCoordinate coordinate = new DependencyCoordinate();
         for (Xpp3Dom child : dom.getChildren()) {
             String name = child.getName().toLowerCase();
@@ -243,6 +244,7 @@ public class ResolveProjectModelMojo extends GAbstractMojo {
                 throw new MojoExecutionException(e.getLocalizedMessage(), e);
             }
         }
+        checkVersionForDM(coordinate, project);
         return coordinate.getArtifactId() == null || coordinate.getGroupId() == null ? null : coordinate;
     }
 
