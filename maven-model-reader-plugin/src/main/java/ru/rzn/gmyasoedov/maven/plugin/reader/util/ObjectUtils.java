@@ -33,4 +33,8 @@ public class ObjectUtils {
     public static String emptyStringIfNull(String obj) {
         return (obj != null) ? obj : "";
     }
+
+    public static String getGAKey(String groupId, String artifactId) {
+        return groupId + ":" + artifactId;
+    }
 }

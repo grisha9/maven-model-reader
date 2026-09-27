@@ -22,6 +22,8 @@ package ru.rzn.gmyasoedov.maven.plugin.reader;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenArtifact;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenMapResult;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class BuildContext {
@@ -33,6 +35,11 @@ public class BuildContext {
     public final boolean readOnly;
     public final MavenMapResult previousResult;
     public final TreeMap<String, MavenArtifact> readArtifactCache = new TreeMap<>();
+    /**
+     * "groupId:artifactId" of reactor projects used by other reactor projects as test-jar dependency.
+     * Lazy calculated once per build.
+     */
+    public Set<String> testJarProjectIds = new HashSet<>();
 
     public BuildContext(
             boolean addDependenciesInfo,

@@ -23,6 +23,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
 import ru.rzn.gmyasoedov.maven.plugin.reader.BuildContext;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenListResult;
+import ru.rzn.gmyasoedov.maven.plugin.reader.util.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,10 +44,15 @@ public class ListResultConverter {
     ) {
         List<MavenProject> projects = session.getAllProjects();
         if (projects == null || projects.isEmpty()) return Collections.emptyList();
-        List<ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProject> result = new ArrayList<>(projects.size());
+        List<ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProject> results = new ArrayList<>(projects.size());
         for (MavenProject each : projects) {
-            result.add(MavenProjectConverter.convert(each, session, context));
+            results.add(MavenProjectConverter.convert(each, session, context));
         }
-        return result;
+        for (ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProject project : results) {
+            project.setTestJar(context.testJarProjectIds.contains(
+                    ObjectUtils.getGAKey(project.getGroupId(), project.getArtifactId())
+            ));
+        }
+        return results;
     }
 }
