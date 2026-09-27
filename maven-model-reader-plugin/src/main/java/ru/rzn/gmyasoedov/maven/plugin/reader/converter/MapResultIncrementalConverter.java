@@ -28,6 +28,8 @@ import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProjectContainer;
 
 import java.util.*;
 
+import static ru.rzn.gmyasoedov.maven.plugin.reader.converter.MapResultConverter.fillTestJar;
+
 
 public class MapResultIncrementalConverter {
 
@@ -52,6 +54,7 @@ public class MapResultIncrementalConverter {
         }
 
         fillContainer(previousResult, projectByArtifactIdMap);
+        fillTestJar(previousResult, context);
         return previousResult;
     }
 

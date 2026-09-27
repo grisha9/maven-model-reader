@@ -25,6 +25,7 @@ import org.apache.maven.project.MavenProject;
 import ru.rzn.gmyasoedov.maven.plugin.reader.BuildContext;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenMapResult;
 import ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProjectContainer;
+import ru.rzn.gmyasoedov.maven.plugin.reader.util.ObjectUtils;
 
 import java.io.File;
 import java.util.HashMap;
@@ -60,7 +61,7 @@ public class MapResultConverter {
                 MavenProjectConverter.convert(topLevelProject, session, context)
         );
         fillContainer(container, projectByDirectoryMap, context, session);
-
+        fillTestJar(container, context);
         return container;
     }
 
@@ -89,6 +90,19 @@ public class MapResultConverter {
             );
             rootContainer.getModules().add(projectContainer);
             fillContainer(projectContainer, projectByDirectoryMap, context, session);
+        }
+    }
+
+    public static void fillTestJar(MavenProjectContainer container, BuildContext context) {
+        if (context.testJarProjectIds.isEmpty()) return;
+
+        ru.rzn.gmyasoedov.maven.plugin.reader.model.MavenProject project = container.getProject();
+        if (project == null) return;
+        project.setTestJar(context.testJarProjectIds.contains(
+                ObjectUtils.getGAKey(project.getGroupId(), project.getArtifactId())
+        ));
+        for (MavenProjectContainer module : container.getModules()) {
+            fillTestJar(module, context);
         }
     }
 }
