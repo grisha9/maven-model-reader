@@ -54,6 +54,11 @@ public class MavenProject implements MavenId, Serializable {
     private List<String> excludedPaths = Collections.emptyList();
     private String generatedPath;
     private String testGeneratedPath;
+    /**
+     * true if this project is used by another project of the reactor as a test-jar dependency
+     * ({@code <type>test-jar</type>} or {@code <classifier>tests</classifier>})
+     */
+    private boolean testJar;
 
     @Override
     public String getArtifactId() {
@@ -264,6 +269,14 @@ public class MavenProject implements MavenId, Serializable {
 
     public void setAnnotationProcessorPaths(List<String> annotationProcessorPaths) {
         this.annotationProcessorPaths = annotationProcessorPaths;
+    }
+
+    public boolean isTestJar() {
+        return testJar;
+    }
+
+    public void setTestJar(boolean testJar) {
+        this.testJar = testJar;
     }
 
     @Override

@@ -42,15 +42,22 @@ import static ru.rzn.gmyasoedov.maven.plugin.reader.util.ObjectUtils.emptyString
 public class MavenProjectConverter {
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
     private static final int MAX_PROJECT_RECURSION_DEPTH = 10;
+    private static final String TEST_JAR_TYPE = "test-jar";
+    private static final String TESTS_CLASSIFIER = "tests";
 
-    public static MavenProject convert(org.apache.maven.project.MavenProject mavenProject,
-                                       MavenSession session,
-                                       BuildContext context) {
+    public static MavenProject convert(
+            org.apache.maven.project.MavenProject mavenProject,
+            MavenSession session,
+            BuildContext context
+    ) {
         List<MavenPlugin> plugins = getPlugins(mavenProject, context);
 
         List<MavenArtifact> artifacts = new ArrayList<>(mavenProject.getArtifacts().size());
         for (Artifact artifact : mavenProject.getArtifacts()) {
             artifacts.add(MavenArtifactConverter.convert(artifact));
+            if (isTestJar(artifact)) {
+                context.testJarProjectIds.add(ObjectUtils.getGAKey(artifact.getGroupId(), artifact.getArtifactId()));
+            }
         }
         List<String> modulesDir = convertModules(mavenProject.getBasedir(), mavenProject.getModules());
         if (context.readOnly) {
@@ -97,6 +104,10 @@ public class MavenProjectConverter {
         result.setAnnotationProcessorPaths(getAnnotationProcessorPath(mavenProject));
 
         return result;
+    }
+
+    private static boolean isTestJar(Artifact artifact) {
+        return TEST_JAR_TYPE.equals(artifact.getType()) || TESTS_CLASSIFIER.equals(artifact.getClassifier());
     }
 
     private static List<MavenPlugin> getPlugins(
