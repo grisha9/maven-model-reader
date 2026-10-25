@@ -20,7 +20,7 @@
 package ru.rzn.gmyasoedov.maven.plugin.reader;
 
 /**
- * File origin: org.apache.maven.plugin.compiler.DependencyCoordinate (<artifactId>maven-compiler-plugin</artifactId>)
+ * File origin: org.apache.maven.plugin.compiler.DependencyCoordinate ({@code <artifactId>maven-compiler-plugin</artifactId>})
  */
 public class DependencyCoordinate
 {

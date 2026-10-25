@@ -29,6 +29,8 @@
     <version>0.6</version>
     <packaging>maven-plugin</packaging>
 
+    <name>maven-model-reader-plugin</name>
+
     <url>https://github.com/grisha9/maven-model-reader</url>
     <description>Project model resolver</description>
 
@@ -135,12 +137,32 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.2.1</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
                         <goals>
                             <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version> <!-- Use the latest stable version -->
+                <configuration>
+                    <!-- POM snippets like <artifactId> in Javadoc comments are not valid HTML,
+                         so turn off strict doclint checking (JDK 8+) and don't fail the build. -->
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <failOnError>false</failOnError>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
